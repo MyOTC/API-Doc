@@ -4,12 +4,6 @@
 
 ```
 <?php
-/**
- * Created by PhpStorm.
- * User: mi
- * Date: 2018/12/29
- * Time: 下午12:16
-*/
 $order_no = time();
 $amount = 100;
 $outUid = mt_rand(1,10);
