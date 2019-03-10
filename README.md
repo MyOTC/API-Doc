@@ -70,7 +70,7 @@ $sign = md5($signStr);
             </div>
             <div class="item flex flex-center">
                 <div class="flex-auto it">AccessKey</div>
-                <input type="text" name="accessKey" value="9khriuu4-tzzh96jl-ekxibzth-q2390">
+                <input type="text" name="accessKey" value="<?= $accessKey?>">
             </div>
             <div class="item flex flex-center">
                 <div class="flex-auto it">UID</div>
