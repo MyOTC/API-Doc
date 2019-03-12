@@ -101,8 +101,12 @@ $sign = md5($signStr);
 ```
 ### 接收回调
 java
+
 ```
-/**
+public class OrderNotifyService {
+    private static final Logger log = LoggerFactory.getLogger(OrderNotifyService.class);
+    private final String SECRET_KEY = ""; //商家后台设置的回调密钥
+    /**
      * 订单状态异步回调
      *
      * @param request
@@ -125,28 +129,25 @@ java
             }
 
             if (message != null && message.getType() != null) {
-                if ("1".equals(message.getSignatureVersion()) && isMessageSignatureValid(message)) {
-                    OrderStatusAsyncNotifyMessage orderStatusAsyncNotifyMessage = null;
-                    if (message.getType().equals("Notification")) {
-                        if (!ApiIdentityUtil.sign(this.SECRET_KEY, HmacAlgorithms.HMAC_SHA_256.getName(), message.getMessage()).equals(message.getSubject())) {
-                            log.info("Business signature verification failed.");
-                            throw new SecurityException("Unexpected signature version. Unable to verify signature.");
-                        }
-                        
-                        
-                    } else if (message.getType().equals("SubscriptionConfirmation")) {
-                        this.subscription(message);
-                    } else if (message.getType().equals("UnsubscribeConfirmation")) {
-                        this.subscription(message);
-                    } else {
-                        log.info("Unknown message type.");
+                
+                if (message.getType().equals("Notification")) {
+                    if (!this.sign(this.SECRET_KEY, HmacAlgorithms.HMAC_SHA_256.getName(), message.getMessage()).equals(message.getSubject())) {
+                        log.info("Business signature verification failed.");
+                        throw new SecurityException("签名验证失败");
                     }
 
-                    log.info("Done processing message: " + message.getMessageId());
-                    return orderStatusAsyncNotifyMessage;
+                    //业务逻辑在此完成
+
+                } else if (message.getType().equals("SubscriptionConfirmation")) {
+                    //确认订阅
+                    this.subscription(message);
+                } else if (message.getType().equals("UnsubscribeConfirmation")) {
+                    //确认订阅
+                    this.subscription(message);
                 } else {
-                    throw new SecurityException("Signature verification failed.");
+                    log.info("Unknown message type.");
                 }
+
             } else {
                 log.info("message type not exist");
                 throw new InvalidParameterException("Unexpected signature version. Unable to verify signature.");
@@ -163,4 +164,14 @@ java
         log.info("Subscription confirmation (" + msg.getSubscribeURL() + ") Return value: " + response);
     }
     
+    //签名
+    public static String sign(String accessKeySecret, String signatureMethod, String strToSign) {
+       String signature = null;
+       if (Objects.equals(signatureMethod, HmacAlgorithms.HMAC_SHA_256.getName())) {
+           signature = Base64.encodeBase64String((new HmacUtils(HmacAlgorithms.HMAC_SHA_256, accessKeySecret)).hmac(strToSign));
+       }
+
+       return signature;
+   }
+}
 ```
