@@ -2,6 +2,8 @@
 
 具体可以参看demo.php
 
+### 创建订单
+
 ```
 <?php
 $order_no = time();
@@ -97,4 +99,68 @@ $sign = md5($signStr);
 </body>
 </html>
 ```
+### 接收回调
+java
+```
+/**
+     * 订单状态异步回调
+     *
+     * @param request
+     * @throws IOException
+     */
+    @RequestMapping("/v1/api0/demo/notify")
+    public void orderStatusNotify(HttpServletRequest request) throws IOException {
+        String messageJson = IOUtils.toString(request.getInputStream(), "UTF-8");
+        
+        if (messageJson == null) {
+            throw new NullPointerException("messageJson is marked @NonNull but is null");
+        } else {
+            log.info("order Status notify message received:{}", messageJson);
 
+            Message message;
+            try {
+                message = (Message)JSON.parseObject(messageJson, Message.class);
+            } catch (Exception var5) {
+                throw new InvalidParameterException("message format error.");
+            }
+
+            if (message != null && message.getType() != null) {
+                if ("1".equals(message.getSignatureVersion()) && isMessageSignatureValid(message)) {
+                    OrderStatusAsyncNotifyMessage orderStatusAsyncNotifyMessage = null;
+                    if (message.getType().equals("Notification")) {
+                        if (!ApiIdentityUtil.sign(this.SECRET_KEY, HmacAlgorithms.HMAC_SHA_256.getName(), message.getMessage()).equals(message.getSubject())) {
+                            log.info("Business signature verification failed.");
+                            throw new SecurityException("Unexpected signature version. Unable to verify signature.");
+                        }
+                        
+                        
+                    } else if (message.getType().equals("SubscriptionConfirmation")) {
+                        this.subscription(message);
+                    } else if (message.getType().equals("UnsubscribeConfirmation")) {
+                        this.subscription(message);
+                    } else {
+                        log.info("Unknown message type.");
+                    }
+
+                    log.info("Done processing message: " + message.getMessageId());
+                    return orderStatusAsyncNotifyMessage;
+                } else {
+                    throw new SecurityException("Signature verification failed.");
+                }
+            } else {
+                log.info("message type not exist");
+                throw new InvalidParameterException("Unexpected signature version. Unable to verify signature.");
+            }
+        }
+        
+        IOUtils.closeQuietly(request.getInputStream());
+    }
+    
+    //确认订阅
+    private void subscription(Message msg) throws IOException {
+        InputStream inputStream = (new URL(msg.getSubscribeURL())).openStream();
+        String response = IOUtils.toString(inputStream, "UTF-8");
+        log.info("Subscription confirmation (" + msg.getSubscribeURL() + ") Return value: " + response);
+    }
+    
+```
