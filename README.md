@@ -100,6 +100,7 @@ $sign = md5($signStr);
 </html>
 ```
 ### 接收回调
+
 java
 
 ```
@@ -165,7 +166,7 @@ public class OrderNotifyService {
     }
     
     //签名
-    public static String sign(String accessKeySecret, String signatureMethod, String strToSign) {
+    private String sign(String accessKeySecret, String signatureMethod, String strToSign) {
        String signature = null;
        if (Objects.equals(signatureMethod, HmacAlgorithms.HMAC_SHA_256.getName())) {
            signature = Base64.encodeBase64String((new HmacUtils(HmacAlgorithms.HMAC_SHA_256, accessKeySecret)).hmac(strToSign));
@@ -174,4 +175,43 @@ public class OrderNotifyService {
        return signature;
    }
 }
+```
+
+PHP，以Yii2框架为例
+
+```
+class OrderController {
+
+    public function actionNotify() {
+        
+        Yii::getLogger()->log("I'm commming...", 99, 'callback_start');
+        
+        $params = Yii::$app->request->post();
+        $subject = isset($params['Subject'])?$params['Subject']:'';
+        Yii::getLogger()->log($params, 99, 'callback_params');
+        
+        if($params['Type']=='SubscriptionConfirmation' || $params['Type']=='UnsubscribeConfirmation'){
+            $res = $this->subsribe($params['SubscribeURL']);
+        }else if($params['Type']=='Notification'){
+            $message = isset($params['Message'])?$params['Message']:null;
+            
+            if($this->valid_sign($message, $subject)){
+                $data = json_decode($message, true);
+                //业务逻辑
+            }
+        }
+    }
+    
+    private function valid_sign($message, $subject){
+        $config = Library::VcbConfig();
+        $sign = base64_encode(hash_hmac('sha256', $message, $config['AccessKeyId'], true));
+        if($sign == $subject){
+            return true;
+        }
+        Yii::getLogger()->log(['sign'=>$sign,'subject'=>$subject], 99, 'valid_sign_fail');
+        return false;
+    }
+    
+ }
+            
 ```
