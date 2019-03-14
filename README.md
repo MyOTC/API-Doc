@@ -138,6 +138,10 @@ public class OrderNotifyService {
                     }
 
                     //业务逻辑在此完成
+                    orderStatusAsyncNotifyMessage = (OrderStatusAsyncNotifyMessage)JSON.parseObject(message.getMessage(), OrderStatusAsyncNotifyMessage.class);
+                    if (function != null) {
+                        function.apply(orderStatusAsyncNotifyMessage);
+                    }
 
                 } else if (message.getType().equals("SubscriptionConfirmation")) {
                     //确认订阅
