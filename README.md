@@ -206,6 +206,15 @@ class OrderController {
         }
     }
     
+    private function subsribe($url){
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        $output = curl_exec($curl);
+        curl_close($curl);
+        return $output;
+    }
+    
     private function valid_sign($message, $subject){
         $config = Library::VcbConfig();
         $sign = base64_encode(hash_hmac('sha256', $message, $config['AccessKeyId'], true));
